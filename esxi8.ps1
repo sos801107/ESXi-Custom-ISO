@@ -12,12 +12,16 @@ $baseESXiVer = "8"
 # or 
 # https://higherlogicdownload.s3.amazonaws.com/BROADCOM/092f2b51-ca4c-4dca-abc0-070f25ade760/UploadedImages/Flings_Content/filename.zip"
 
-# Define source links
+# Define Fling source file & link
 $flingUrl = "https://raw.githubusercontent.com/itiligent/ESXi-Custom-ISO/main/8-updates/" # Fling archive in case they disappear again
 $usbFling = "ESXi803-VMKUSB-NIC-FLING-76444229-component-24179899.zip"
-$manualUpdate1 = "ESXi-8.0U3e-24674464-standard.zip"
+
+# Nominate a custom esxi depot zip file:
+# (Run this script in the same direcrtory as file $manualUpdate1 to build locally without downloading)
+$manualUpdate1 = "ESXi-8.0U3e-24674464-standard.zip" 
+
+# Custom esxi depot zip file link:
 $manualUpdateUrl1 = "https://my.microsoftpersonalcontent.com/personal/d019e1a076a71cc7/_layouts/15/download.aspx?UniqueId=f5954d1d-748f-435d-826d-98ce8e98b7ab&Translate=false&tempauth=v1e.eyJzaXRlaWQiOiI4ODVlNTNhZC1kMmJhLTQ0MTktYjdiZS1jYmRmMTg5MjQ1OTEiLCJhcHBpZCI6IjAwMDAwMDAwLTAwMDAtMDAwMC0wMDAwLTAwMDA0ODE3MTBhNCIsImF1ZCI6IjAwMDAwMDAzLTAwMDAtMGZmMS1jZTAwLTAwMDAwMDAwMDAwMC9teS5taWNyb3NvZnRwZXJzb25hbGNvbnRlbnQuY29tQDkxODgwNDBkLTZjNjctNGM1Yi1iMTEyLTM2YTMwNGI2NmRhZCIsImV4cCI6IjE3NDQ1MTYyNDIifQ.hysKNEqutu2qoDGwPVcn-VACWYuzx--L_ru5uxcZifYEHsD4tINxB6umRO-7WvMS1NhcTqEcRtR601q6YgW_DOR-TlMzp2HeXPc7tpqRrG-fVO3z2PxQzR4B9FFluQEMPjOWccZkx5FQGWsJSaClpd8sf-sImwf7njIq7YcDYJATlfuFCZgUO88SCdjmEqzj2wqVZF6hV-OqXMQERhO9p2Bnhk99j30LjMfSJAwall3Qt2KYjVeH3kObhXaibSgaKXYPfgsmvrmkxDyzwuxJyf3d5eMEkrCLQ8136DCnayLbjoXdlXHiHYTWCMJstKwN3IXIsUQbAt-vWrnzlX8MxxiOlAOcHdGMEQHXTHfdCLLLEn55FFORJT6CR5Hnz3F-kHTAV65gSie16G_xB3ngsg.zfNP9bVAlqMK3NeJ9n_zu_XuSecUoa74g8p-o6HjYuM&ApiVersion=2.0"
-# Run this script in the same direcrtory as file $manualUpdate1 to build locally without downloading    
 
 echo ""
 echo "Retrieving latest ESXi $baseESXiVer release information..."
@@ -49,7 +53,6 @@ switch ($choice) {
         Add-EsxSoftwareDepot https://hostupdate.vmware.com/software/VUM/PRODUCTION/main/vmw-depot-index.xml
         $imageProfiles = Get-EsxImageProfile | Where-Object { $_.Name -like "ESXi-$baseESXiVer*-standard*" } | Sort-Object -Property CreationTime -Descending
         echo ""
-        echo "ESXi-8.0U3e-24674464-standard was the last public download" 
     }
 }
 
