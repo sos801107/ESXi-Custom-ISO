@@ -17,6 +17,7 @@ $baseESXiVer = "6.7"
 
 # Define archive source links and files
 $flingUrl = "https://raw.githubusercontent.com/itiligent/ESXi-Custom-ISO/main/6-updates/"
+# Final 3 updates
 $manualUpdate1 = "ESXi670-202503001.zip"
 $manualUpdate2 = "ESXi670-202403001.zip"
 $manualUpdate3 = "ESXi670-202210001.zip"
