@@ -1,9 +1,6 @@
 # ☁️ Custom VMware ESXi ISO build scripts
 ## Inject consumer NIC, NVME & USB NIC drivers into ESXi ISO images.
 
-### UPDATE: ESXi source is no longer availalble for public download.
-- You must update `$manualUpdate` and `$manualUpdateUrl` settings to point to your ESXi source download link or local source zip file
-  
 ### [esxi8.ps1](https://github.com/itiligent/ESXi-Custom-ISO/blob/main/esxi8.ps1) 
 - Builds an ESXi 8.x iso with latest USB NIC Fling drivers.
 
