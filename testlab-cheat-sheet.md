@@ -65,35 +65,35 @@ esxcli system module parameters set -p "$(esxcli network nic list |grep vusb |aw
 ### To add a USB backup datastore to ESXi:
 
     1. Stop the USB arbitrator from passing through USB devices temporarily:
-       /etc/init.d/usbarbitrator stop
+			/etc/init.d/usbarbitrator stop
 
     2. Plug in the new USB storage
 
-    3. Refresh storage devices list in the ESXi console and note the new USB device name. e.g: mpx.vmhba32:C0:T0:L0
-
-    4. Use the new USB device name to create new GPT parition label:
-       partedUtil mklabel /dev/disks/mpx.vmhba32:C0:T0:L0 gpt
-
-    5. Use the new USB device name to calculate the total volume sectors:
-       eval expr $(partedUtil getptbl /dev/disks/mpx.vmhba32:C0:T0:L0 | tail -1 | awk '{print $1 " \\* " $2 " \\* " $3}') - 1
-
-    6. Use the sector result from above e.g 7814032064 to create the new datastore partition:
-       partedUtil setptbl /dev/disks/mpx.vmhba32:C0:T0:L0 gpt "1 2048 7814032064 AA31E02A400F11DB9590000C2911D1B8 0"
-
-    9. Format and name the new USB datastore on the new USB device:
-       vmkfstools -C vmfs6 -S USB4TB /dev/disks/mpx.vmhba32:C0:T0:L0:1
-
-    8. Get the new USB device ID from the hardware passthrough list:
-       esxcli hardware usb passthrough device list
-   
-       Bus  Dev  VendorId  ProductId  Enabled  Can Connect to VM          Name
-       ---  ---  --------  ---------  -------  -------------------------  ----
-       2    2    bc2       231a       true     yes (passthrough enabled)  Seagate RSS LLC Expansion Portable
-
-    9. Prevent USB passthrough for this specific USB device using the above list output, formatted as  #:#:#:#
+    3. Get the new USB device ID from the hardware passthrough list:
+	
+    		esxcli hardware usb passthrough device list
+	   
+   		    Bus  Dev  VendorId  ProductId  Enabled  Can Connect to VM          Name
+       		---  ---  --------  ---------  -------  -------------------------  ----
+       		2    2    bc2       231a       true     yes 				       Seagate RSS LLC Expansion Portable
+		 											(yes = passthrough enabled,
+			  										   we want this disabled)
+	   		
+    4. Prevent USB passthrough for this specific USB device using the above list output, formatted as  #:#:#:#
+	
        esxcli hardware usb passthrough device disable -d 2:2:bc2:231a
 
-    10. Reboot. The new USB datastore should be available in the console and USB redirection still available for other USB devices.
+    5. Refresh storage devices list in the ESXi console and note the new USB device name. e.g: mpx.vmhba32:C0:T0:L0 for the next step
+	
+	6. update the below DEV and DATASTORE variables and run each line in the terminal:
+
+ 	DEV="/dev/disks/mpx.vmhba32:C0:T0:L0"
+	DATASTORE_NAME="Backup"
+ 
+	partedUtil mklabel $DEV gpt # set the gpt label
+	END_SECTOR=$(eval expr $(partedUtil getptbl "$DEV" | tail -1 | awk '{print $1 " \\* " $2 " \\* " $3}') - 1) # get disk geometry
+	partedUtil setptbl $DEV gpt "1 2048 $END_SECTOR AA31E02A400F11DB9590000C2911D1B8 0" # create partition
+	vmkfstools -C vmfs6 -S $DATASTORE_NAME $DEV:1 # format as vmfs6 volume
 
 ### Manually shrink a thin provisioned VMDK:
 
@@ -176,10 +176,11 @@ scp -rp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null /vmfs/volume
 
 SCP copy over the network with sshkeys (set priv key file perms with chmod 400): 
 ```
-RSA ssh keys:
-    scp -rp -i /productLocker/dest-priv-key -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null /vmfs/volumes/source_path/* user@x.x.x.x:/destination_path/
-EdSA ssh keys:
-   scp -rp -i /productLocker/dest-priv-key -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o PubkeyAcceptedKeyTypes=+ssh-ed25519  /vmfs/volumes/source_path/* user@x.x.x.x:/destination_path/
+from a separate linux ssh host
+scp -rp -i /path/to/privkey -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null root@x.x.x.1:/vmfs/volumes/datastore1/source/* root@x.x.x.2:/vmfs/volumes/datastore1/destination/
+
+from esxi:
+    scp -rp -i /path/to/privkey -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null /vmfs/volumes/source/* user@x.x.x.x:/destination/
 ```
 
 ### Cloning an ESXi OS disk with a VMFS datastore present
@@ -200,12 +201,12 @@ vim-cmd hostsvc/firmware/sync_config && vim-cmd hostsvc/firmware/backup_config
 Next, download *configBundle*.tgz  from the http link given
 
 ### Restore ESXi config
-change backup file name to configBundle.tgz
-copy to configBundle.tgz to /tmp
+change backup file name to configBundle.tgz and copy to configBundle.tgz to /tmp
+```
 vim-cmd hostsvc/maintenance_mode_enter
-vim-cmd hostsvc/firmware/restore_config 0
-vim-cmd hostsvc/firmware/restore_config 1 # override UUID
-
+vim-cmd hostsvc/firmware/restore_config 0 # if restoring to same server
+vim-cmd hostsvc/firmware/restore_config 1 # if restoring to different hw and/or there is a UUID mismatch
+```
 
 ### Adding Rsync to ESXi for backups and much more: 
 See [here](https://github.com/itiligent/RSYNC-for-ESXi) for using rsync with ESXi
@@ -246,4 +247,8 @@ usb.autoConnect.device4 = "0xbda:0x8156" # RTL 2.5gbe
 ```
 ### Check Esxi NVME smart data
 
+```
 esxcli storage core device smart get -d t10.NVMe____TEAM_TM8FPK002T_________________________0200000000000000
+```
+
+
